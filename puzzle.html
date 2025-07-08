@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Word Puzzle</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 20px; }
+    .letter-button {
+      display: inline-block;
+      margin: 10px;
+      padding: 20px;
+      font-size: 32px;
+      border: 2px solid #333;
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+    }
+    .selected {
+      background-color: #cce5ff;
+      border-color: #0056b3;
+    }
+    #word-display { margin-top: 20px; font-size: 24px; }
+    #progress { margin: 10px; font-size: 18px; }
+  </style>
+</head>
+<body>
+
+<h2></h2>
+<div id="progress"></div>
+<div id="letters"></div>
+<div id="word-display"></div>
+
+<script>
+  const words = [
+    "PLANE", "SHIRT", "BRAIN", "MOUSE", "APPLE",
+    "CHAIR", "SUGAR", "NURSE", "GLASS", "STORM",
+    "BREAD", "CLOUD", "PIZZA", "FLOOR", "WATER",
+    "CRANE", "SHEEP", "HEART", "LEMON", "GHOST"
+  ];
+
+  let trial = 0;
+  let selectedLetters = [];
+  let selectedIndices = new Set();
+  let trialStartTime = null;
+  let results = [];
+
+  const letterDiv = document.getElementById("letters");
+  const display = document.getElementById("word-display");
+  const progress = document.getElementById("progress");
+
+  function shuffle(array) {
+    let arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      let j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function showTrial() {
+    selectedLetters = [];
+    selectedIndices = new Set();
+    display.textContent = "";
+    progress.textContent = `Trial ${trial + 1} of ${words.length}`;
+    trialStartTime = Date.now();
+
+    const word = words[trial];
+    const shuffled = shuffle(word.split(""));
+    letterDiv.innerHTML = "";
+
+    shuffled.forEach((letter, index) => {
+      const btn = document.createElement("div");
+      btn.className = "letter-button";
+      btn.textContent = letter;
+      btn.dataset.index = index;
+
+      btn.onclick = () => {
+        const i = parseInt(btn.dataset.index);
+
+        if (selectedIndices.has(i)) {
+          // Unselect
+          selectedIndices.delete(i);
+          const idxToRemove = selectedLetters.findIndex((l, idx) => {
+            return Array.from(selectedIndices)[idx] === i;
+          });
+          selectedLetters.splice(idxToRemove, 1);
+          btn.classList.remove("selected");
+        } else {
+          if (selectedLetters.length < word.length) {
+            selectedIndices.add(i);
+            selectedLetters.push(letter);
+            btn.classList.add("selected");
+          }
+        }
+
+        if (selectedLetters.length === word.length) {
+          const userInput = selectedLetters.join('');
+          const correct = userInput === word;
+          const endTime = Date.now();
+          const reactionTime = endTime - trialStartTime;
+
+          results.push({
+            word,
+            input: userInput,
+            correct,
+            startTime: trialStartTime,
+            endTime: endTime,
+            reactionTime: reactionTime
+          });
+
+          setTimeout(nextTrial, 300);
+        }
+      };
+
+      letterDiv.appendChild(btn);
+    });
+  }
+
+  function nextTrial() {
+    trial++;
+    if (trial < words.length) {
+      showTrial();
+    } else {
+      endGame();
+    }
+  }
+
+  function endGame() {
+    letterDiv.innerHTML = "";
+    display.innerHTML = "Finished! Thank you.";
+    progress.innerHTML = "";
+
+    const jsonStr = JSON.stringify(results);
+    const escaped = jsonStr.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const qSet = `Qualtrics.SurveyEngine.setEmbeddedData("word_puzzle_data", '${escaped}');`;
+    const script = document.createElement("script");
+    script.innerHTML = qSet;
+    document.body.appendChild(script);
+  }
+
+  showTrial();
+</script>
+
+</body>
+</html>
