@@ -26,10 +26,10 @@
 </head>
 <body>
 
-<h2></h2>
+<h2>Word Puzzle</h2>
 <div id="progress"></div>
 <div id="letters"></div>
-<div id="word-display"></div>
+<div id="word-display">Click the letters to form a word</div>
 
 <script>
   const words = [
@@ -61,7 +61,7 @@
   function showTrial() {
     selectedLetters = [];
     selectedIndices = new Set();
-    display.textContent = "";
+    display.textContent = "Click the letters to form a word";
     progress.textContent = `Trial ${trial + 1} of ${words.length}`;
     trialStartTime = Date.now();
 
@@ -79,7 +79,6 @@
         const i = parseInt(btn.dataset.index);
 
         if (selectedIndices.has(i)) {
-          // Unselect
           selectedIndices.delete(i);
           const idxToRemove = selectedLetters.findIndex((l, idx) => {
             return Array.from(selectedIndices)[idx] === i;
@@ -131,12 +130,11 @@
     display.innerHTML = "Finished! Thank you.";
     progress.innerHTML = "";
 
-    const jsonStr = JSON.stringify(results);
-    const escaped = jsonStr.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    const qSet = `Qualtrics.SurveyEngine.setEmbeddedData("word_puzzle_data", '${escaped}');`;
-    const script = document.createElement("script");
-    script.innerHTML = qSet;
-    document.body.appendChild(script);
+    // Send result to parent page (Qualtrics) via postMessage
+    window.parent.postMessage({
+      type: "word_puzzle_data",
+      payload: results
+    }, "*");
   }
 
   showTrial();
