@@ -1,10 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Word Puzzle</title>
   <style>
-    body { font-family: sans-serif; text-align: center; padding: 20px; }
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: sans-serif;
+      background: #f9f9f9;
+    }
+
+    #container {
+      text-align: center;
+      padding: 40px;
+      border: 2px solid #ccc;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+    }
+
     .letter-button {
       display: inline-block;
       margin: 10px;
@@ -16,129 +41,145 @@
       user-select: none;
       transition: background 0.2s;
     }
+
     .selected {
       background-color: #cce5ff;
       border-color: #0056b3;
     }
-    #word-display { margin-top: 20px; font-size: 24px; }
-    #progress { margin: 10px; font-size: 18px; }
+
+    #word-display {
+      margin-top: 20px;
+      font-size: 24px;
+    }
+
+    #progress {
+      margin: 10px;
+      font-size: 18px;
+    }
   </style>
 </head>
+
 <body>
 
-<h2>Word Puzzle</h2>
-<div id="progress"></div>
-<div id="letters"></div>
-<div id="word-display">Click the letters to form a word</div>
+  <div id="container">
+    <h2></h2>
+    <div id="progress"></div>
+    <div id="letters"></div>
+    <div id="word-display"></div>
+  </div>
 
-<script>
-  const words = [
-    "PLANE", "SHIRT", "BRAIN", "MOUSE", "APPLE",
-    "CHAIR", "SUGAR", "NURSE", "GLASS", "STORM",
-    "BREAD", "CLOUD", "PIZZA", "FLOOR", "WATER",
-    "CRANE", "SHEEP", "HEART", "LEMON", "GHOST"
-  ];
+  <script>
+    // words = [
+    //   "PLANE", "SHIRT", "BRAIN", "MOUSE", "APPLE",
+    //   "CHAIR", "SUGAR", "NURSE", "GLASS", "STORM",
+    //   "BREAD", "CLOUD", "PIZZA", "FLOOR", "WATER",
+    //   "CRANE", "SHEEP", "HEART", "LEMON", "GHOST"
+    // ];
 
-  let trial = 0;
-  let selectedLetters = [];
-  let selectedIndices = new Set();
-  let trialStartTime = null;
-  let results = [];
+    // words = ["AGONY", "APRON", "BIGOT", "BLADE", "BLIMP", "BRINE", "BUNCH", "CABIN", "CAIRN", "CHAIR", "CHIME", "CHORD", "CLASH", "CLOAK", "CLOWN", "COUNT", "COVER", "CRAMP", "CROWD", "CRUMB", "CRUSH", "DEPTH", "DOUBT", "DRINK", "DUNCE", "FAIRY", "FANCY", "FIGHT", "FINCH", "FLASH", "FLIRT", "FORCE", "FRONT", "FRUIT", "GLINT", "GLOVE", "GUARD", "HONEY", "HOVEL", "HYENA"]
+    words = ["AGONY", "APRON", "BIGOT", "BLADE", "BLIMP", "BRINE", "BUNCH", "CABIN", "CAIRN", "CHAIR", "CHIME", "CHORD", "CLASH", "CLOAK", "CLOWN", "COUNT", "COVER", "CRAMP", "CROWD", "CRUMB"]
+    words = shuffle(words);
 
-  const letterDiv = document.getElementById("letters");
-  const display = document.getElementById("word-display");
-  const progress = document.getElementById("progress");
+    let trial = 0;
+    let selectedLetters = [];
+    let selectedIndices = new Set();
+    let trialStartTime = null;
+    let results = [];
 
-  function shuffle(array) {
-    let arr = [...array];
-    for (let i = arr.length - 1; i > 0; i--) {
-      let j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
+    const letterDiv = document.getElementById("letters");
+    const display = document.getElementById("word-display");
+    const progress = document.getElementById("progress");
+
+    function shuffle(array) {
+      let arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
     }
-    return arr;
-  }
 
-  function showTrial() {
-    selectedLetters = [];
-    selectedIndices = new Set();
-    display.textContent = "Click the letters to form a word";
-    progress.textContent = `Trial ${trial + 1} of ${words.length}`;
-    trialStartTime = Date.now();
+    function showTrial() {
+      selectedLetters = [];
+      selectedIndices = new Set();
+      display.textContent = "";
+      progress.textContent = `Trial ${trial + 1} of ${words.length}`;
+      trialStartTime = Date.now();
 
-    const word = words[trial];
-    const shuffled = shuffle(word.split(""));
-    letterDiv.innerHTML = "";
+      const word = words[trial];
+      const shuffled = shuffle(word.split(""));
+      letterDiv.innerHTML = "";
 
-    shuffled.forEach((letter, index) => {
-      const btn = document.createElement("div");
-      btn.className = "letter-button";
-      btn.textContent = letter;
-      btn.dataset.index = index;
+      shuffled.forEach((letter, index) => {
+        const btn = document.createElement("div");
+        btn.className = "letter-button";
+        btn.textContent = letter;
+        btn.dataset.index = index;
 
-      btn.onclick = () => {
-        const i = parseInt(btn.dataset.index);
+        btn.onclick = () => {
+          const i = parseInt(btn.dataset.index);
 
-        if (selectedIndices.has(i)) {
-          selectedIndices.delete(i);
-          const idxToRemove = selectedLetters.findIndex((l, idx) => {
-            return Array.from(selectedIndices)[idx] === i;
-          });
-          selectedLetters.splice(idxToRemove, 1);
-          btn.classList.remove("selected");
-        } else {
-          if (selectedLetters.length < word.length) {
-            selectedIndices.add(i);
-            selectedLetters.push(letter);
-            btn.classList.add("selected");
+          if (selectedIndices.has(i)) {
+            selectedIndices.delete(i);
+            const idxToRemove = selectedLetters.findIndex((l, idx) => {
+              return Array.from(selectedIndices)[idx] === i;
+            });
+            selectedLetters.splice(idxToRemove, 1);
+            btn.classList.remove("selected");
+          } else {
+            if (selectedLetters.length < word.length) {
+              selectedIndices.add(i);
+              selectedLetters.push(letter);
+              btn.classList.add("selected");
+            }
           }
-        }
 
-        if (selectedLetters.length === word.length) {
-          const userInput = selectedLetters.join('');
-          const correct = userInput === word;
-          const endTime = Date.now();
-          const reactionTime = endTime - trialStartTime;
+          if (selectedLetters.length === word.length) {
+            const userInput = selectedLetters.join('');
+            const correct = userInput === word;
+            const endTime = Date.now();
+            const reactionTime = endTime - trialStartTime;
 
-          results.push({
-            word,
-            input: userInput,
-            correct,
-            startTime: trialStartTime,
-            endTime: endTime,
-            reactionTime: reactionTime
-          });
+            results.push({
+              word,
+              input: userInput,
+              correct,
+              startTime: trialStartTime,
+              endTime: endTime,
+              reactionTime: reactionTime
+            });
 
-          setTimeout(nextTrial, 300);
-        }
-      };
+            setTimeout(nextTrial, 300);
+          }
+        };
 
-      letterDiv.appendChild(btn);
-    });
-  }
-
-  function nextTrial() {
-    trial++;
-    if (trial < words.length) {
-      showTrial();
-    } else {
-      endGame();
+        letterDiv.appendChild(btn);
+      });
     }
-  }
 
-  function endGame() {
-    letterDiv.innerHTML = "";
-    display.innerHTML = "Finished! Thank you.";
-    progress.innerHTML = "";
+    function nextTrial() {
+      trial++;
+      if (trial < words.length) {
+        showTrial();
+      } else {
+        endGame();
+      }
+    }
 
-    // Send result to parent page (Qualtrics) via postMessage
-    window.parent.postMessage({
-      type: "word_puzzle_data",
-      payload: results
-    }, "*");
-  }
+    function endGame() {
+      letterDiv.innerHTML = "";
+      display.innerHTML = "Finished! Thank you.";
+      progress.innerHTML = "";
 
-  showTrial();
-</script>
+      window.parent.postMessage({
+        type: "word_puzzle_data",
+        payload: results
+      }, "*");
+    }
+
+    showTrial();
+  </script>
 
 </body>
+
 </html>
